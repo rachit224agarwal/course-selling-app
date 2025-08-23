@@ -2,7 +2,7 @@ require("dotenv").config();
 const bcrypt = require("bcrypt");
 const { Router } = require("express");
 const userRouter = Router();
-const { UserModel } = require("../db");
+const { UserModel, PurchaseModel, CourseModel } = require("../db");
 const { z } = require("zod");
 const jwt = require("jsonwebtoken");
 const { useMiddleware_User } = require("../middleware/user");
@@ -70,7 +70,7 @@ userRouter.post("/signin",async function(req,res){
     if(passwordMatch){
         const token = jwt.sign({
             id : user._id.toString(),
-        },jwtSecretUser)
+        },jwtSecretUser, { expiresIn: "7d" })
 
         //do cookie logic
         res.cookie("token",token,{
@@ -80,7 +80,8 @@ userRouter.post("/signin",async function(req,res){
         })
 
         res.json({
-            msg : "signin successfully"
+            msg : "signin successfully",
+            token : token
         })
     }else{
         res.status(403).json({
@@ -89,10 +90,18 @@ userRouter.post("/signin",async function(req,res){
     }
 })
 
-userRouter.get("/purchases", useMiddleware_User ,function(req,res){
-    res.json({
-        msg : "purchases successfully"
-    })
+userRouter.get("/purchases", useMiddleware_User , async function(req,res){
+    const userId = req.userId;
+    const purchase = await PurchaseModel.find({
+        userId,
+     })
+     const courseDetails = await CourseModel.find({
+        _id : { $in : purchase.map(x => x.courseId) }
+     })
+     res.json({
+        purchase,
+        courseDetails
+     })
 })
 
 module.exports = {

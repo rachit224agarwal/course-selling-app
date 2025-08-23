@@ -68,7 +68,7 @@ adminRouter.post("/signin", async function(req,res){
     if(passwordMatch){
         const token = jwt.sign({
             id : admin._id.toString(),
-        },jwtSecretAdmin)
+        },jwtSecretAdmin, { expiresIn: "70d" })
 
         //do cookie logic
         res.cookie("token",token,{
@@ -78,7 +78,8 @@ adminRouter.post("/signin", async function(req,res){
         })
 
         res.json({
-            msg : "signin successfully"
+            msg : "signin successfully",
+            token : token 
         })
     }else{
         res.status(403).json({
