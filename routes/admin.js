@@ -2,10 +2,12 @@ require("dotenv").config();
 const bcrypt = require("bcrypt");
 const { Router } = require("express");
 const adminRouter = Router();
-const { AdminModel } = require("../db")
+const { AdminModel, CourseModel } = require("../db")
 const { z } = require("zod");
 const jwt = require("jsonwebtoken");
-const jwtSecretAdmin = process.env.JWT_ADMIN_SECRET;
+const { useMiddleware_Admin } = require("../middleware/admin");
+const { jwtSecretAdmin } = require("../config");
+
 
 
 adminRouter.post("/signup",async function(req,res){
@@ -84,20 +86,54 @@ adminRouter.post("/signin", async function(req,res){
         })
     }
 })
-adminRouter.post("/course",function(req,res){
-    res.json({
-        msg : "signup"
-    })
+adminRouter.post("/course", useMiddleware_Admin ,async function(req,res){
+        const adminId = req.userId;
+
+        const {  title, description, price,imageUrl } = req.body;
+
+        const course = await CourseModel.create({
+            title:title,
+            description:description,
+            price:price, 
+            imageUrl:imageUrl,
+            creatorId:adminId
+        })
+
+        res.json({
+             msg : "Course created",
+             courseId : course._id
+        })
 })
-adminRouter.put("/course",function(req,res){
-    res.json({
-        msg : "signup"
-    })
+adminRouter.put("/course", useMiddleware_Admin ,async function(req,res){
+     const adminId = req.userId;
+
+        const {  title, description, price, imageUrl, courseId } = req.body;
+
+        const course = await CourseModel.updateOne({
+            _id:courseId,
+            creatorId:adminId // protect diff creator updating others courses
+        },{
+            title:title,
+            description:description,
+            price:price, 
+            imageUrl:imageUrl
+        })
+
+        res.json({
+             msg : "Course updated",
+             courseId : course._id
+        })
 })
-adminRouter.get("/course",function(req,res){
-    res.json({
-        msg : "signup"
-    })
+adminRouter.get("/course", useMiddleware_Admin ,async function(req,res){
+       const adminId = req.userId
+
+        const course = await CourseModel.find({
+            creatorId:adminId
+        })
+        res.json({
+            msg : "All Courses",
+            courses : course
+        })
 })
 
 module.exports = { adminRouter }

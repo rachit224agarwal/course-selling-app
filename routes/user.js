@@ -5,7 +5,9 @@ const userRouter = Router();
 const { UserModel } = require("../db");
 const { z } = require("zod");
 const jwt = require("jsonwebtoken");
-const jwtSecret = process.env.JWT_USER_SECRET;
+const { useMiddleware_User } = require("../middleware/user");
+const { jwtSecretUser } = require("../config");
+
 
 
 userRouter.post("/signup",async function(req,res){
@@ -68,7 +70,7 @@ userRouter.post("/signin",async function(req,res){
     if(passwordMatch){
         const token = jwt.sign({
             id : user._id.toString(),
-        },jwtSecret)
+        },jwtSecretUser)
 
         //do cookie logic
         res.cookie("token",token,{
@@ -87,11 +89,13 @@ userRouter.post("/signin",async function(req,res){
     }
 })
 
-userRouter.get("/purchases",function(req,res){
+userRouter.get("/purchases", useMiddleware_User ,function(req,res){
     res.json({
         msg : "purchases successfully"
     })
 })
 
-module.exports = {userRouter} 
+module.exports = {
+    userRouter
+} 
 
